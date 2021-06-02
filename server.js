@@ -1,17 +1,20 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
-var cors = require("cors");
-var querystring = require("querystring");
-var cookieParser = require("cookie-parser");
+const cors = require("cors");
+const querystring = require("querystring");
+const cookieParser = require("cookie-parser");
 const { generateRandomString } = require("./utils");
 const morgan = require("morgan");
 const { default: axios } = require("axios");
-var client_id = process.env.SPOTIFY_CLIENT_ID; // Your client id
-var client_secret = process.env.SPOTIFY_SECRET; // Your secret
+const client_id = process.env.SPOTIFY_CLIENT_ID; // Your client id
+const client_secret = process.env.SPOTIFY_SECRET; // Your secret
 const redirect_uri = process.env.REDIRECT_URI; // Your redirect uri
-const { runAPICalls } = require("./index");
-var stateKey = "spotify_auth_state";
+const { runAPICalls } = require("./api");
+const stateKey = "spotify_auth_state";
+const { getNewToken } = require("./api/spotify");
+let spotifyToken, spotifyRefreshToken;
+const cron = require("node-schedule");
 
 app.use(morgan("dev"));
 app
@@ -20,11 +23,11 @@ app
 	.use(cookieParser());
 
 app.get("/login", function (req, res) {
-	var state = generateRandomString(16);
+	const state = generateRandomString(16);
 	res.cookie(stateKey, state);
 
 	// your application requests authorization
-	var scope = "playlist-modify-private playlist-modify-public";
+	const scope = "playlist-modify-private playlist-modify-public";
 	res.redirect(
 		"https://accounts.spotify.com/authorize?" +
 			querystring.stringify({
@@ -41,9 +44,9 @@ app.get("/callback", async function (req, res) {
 	// your application requests refresh and access tokens
 	// after checking the state parameter
 
-	var code = req.query.code || null;
-	var state = req.query.state || null;
-	var storedState = req.cookies ? req.cookies[stateKey] : null;
+	const code = req.query.code || null;
+	const state = req.query.state || null;
+	const storedState = req.cookies ? req.cookies[stateKey] : null;
 
 	if (state === null || state !== storedState) {
 		res.redirect(
@@ -73,16 +76,20 @@ app.get("/callback", async function (req, res) {
 					},
 				}
 			);
-			const access_token = response.data.access_token,
-				refresh_token = response.data.refresh_token;
+			spotifyToken = response.data.access_token;
+			spotifyRefreshToken = response.data.refresh_token;
 
-			await runAPICalls(access_token, refresh_token);
-			// // we can also pass the token to the browser to make requests from there
+			await runAPICalls(spotifyToken, spotifyRefreshToken);
+			// we can also pass the token to the browser to make requests from there
+			cron.scheduleJob("0 */2 * * *", async () => {
+				spotifyToken = await getNewToken(spotifyRefreshToken);
+				await runAPICalls(spotifyToken, spotifyRefreshToken);
+			});
 			res.redirect(
 				"/#" +
 					querystring.stringify({
-						access_token: access_token,
-						refresh_token: refresh_token,
+						access_token: spotifyToken,
+						refresh_token: spotifyRefreshToken,
 					})
 			);
 		} catch (error) {
@@ -99,28 +106,11 @@ app.get("/callback", async function (req, res) {
 
 app.get("/refresh_token", async function (req, res) {
 	// requesting access token from refresh token
-	var refresh_token = req.query.refresh_token;
+	const refresh_token = req.query.refresh_token;
 	try {
-		const params = new URLSearchParams();
-		params.append("grant_type", "refresh_token");
-		params.append("refresh_token", refresh_token);
-
-		const response = await axios.post(
-			"https://accounts.spotify.com/api/token",
-			params,
-			{
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-					Authorization:
-						"Basic " +
-						Buffer.from(client_id + ":" + client_secret, "utf8").toString(
-							"base64"
-						),
-				},
-			}
-		);
+		const token = await getNewToken(refresh_token);
 		res.send({
-			access_token: response.data.access_token,
+			access_token: token,
 		});
 	} catch (error) {
 		res.send(error);
