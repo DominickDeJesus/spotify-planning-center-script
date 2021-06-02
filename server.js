@@ -10,7 +10,7 @@ const { default: axios } = require("axios");
 var client_id = process.env.SPOTIFY_CLIENT_ID; // Your client id
 var client_secret = process.env.SPOTIFY_SECRET; // Your secret
 const redirect_uri = process.env.REDIRECT_URI; // Your redirect uri
-
+const { runAPICalls } = require("./index");
 var stateKey = "spotify_auth_state";
 
 app.use(morgan("dev"));
@@ -75,8 +75,8 @@ app.get("/callback", async function (req, res) {
 			);
 			const access_token = response.data.access_token,
 				refresh_token = response.data.refresh_token;
-			console.log(access_token, refresh_token);
 
+			await runAPICalls(access_token, refresh_token);
 			// // we can also pass the token to the browser to make requests from there
 			res.redirect(
 				"/#" +

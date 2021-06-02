@@ -5,7 +5,7 @@ const token = Buffer.from(
 	"utf8"
 ).toString("base64");
 
-async function addASong() {
+async function runAPICalls(spotifyToken, spotifyRefresh) {
 	try {
 		const planId = await getLatestPlanId();
 		const songItemIdArray = await getSongItemIdArray(planId);
@@ -18,8 +18,11 @@ async function addASong() {
 
 		const spotifyIds = await getAllSpotifyIds(attachmentIdArray);
 		console.log(spotifyIds);
-
-		const res = await addSongsToPlaylist(spotifyIds);
+		const res = await addSongsToPlaylist(
+			spotifyIds,
+			spotifyToken,
+			spotifyRefresh
+		);
 		console.log(res);
 	} catch (err) {
 		console.log(err.message);
@@ -98,36 +101,22 @@ async function getAllSpotifyIds(attachmentIdArrays) {
 	return spotifyIds;
 }
 
-async function addSongsToPlaylist(spotifyIdArray) {
+async function addSongsToPlaylist(spotifyIdArray, token, refreshToken) {
 	const urlParams =
 		"uris=" + spotifyIdArray.map((id) => `spotify:track:${id},`).join("");
-	console.log(urlParams);
+	console.log("asdddddddddddddddddddddddd");
+	console.log("params: " + urlParams);
 
-	await axios.put(
-		"https://api.spotify.com/v1/playlists/{playlist_id}/tracks",
-		{},
-		{}
-	);
-	return "something";
+	try {
+		const res = await axios.put(
+			`https://api.spotify.com/v1/playlists/${process.env.PLAYLIST_ID}/tracks?${urlParams}`,
+			{},
+			{ headers: { Authorization: "Bearer " + token } }
+		);
+		return res;
+	} catch (error) {
+		console.log(error.message);
+	}
 }
 
-async function setupSpotify() {
-	const state = generateRandomString(16);
-	// res.cookie(stateKey, state);
-	const res = await axios.get(
-		`https://accounts.spotify.com/authorize?` +
-			quirestring.stringify({
-				client_id: process.env.SPOTIFY_CLIENT_ID,
-				response_type: "code",
-				redirect_uri: REDIRECT_URI,
-				scope: "playlist-modify-private playlist-modify-public",
-				state: state,
-			})
-	);
-	console.log(res.data);
-}
-
-(async () => {
-	await setupSpotify();
-	// await addASong();
-})();
+module.exports = { runAPICalls };
