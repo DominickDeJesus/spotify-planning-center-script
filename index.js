@@ -4,7 +4,7 @@ const token = Buffer.from(
 	`${process.env.APP_ID}:${process.env.SECRET}`,
 	"utf8"
 ).toString("base64");
-("https://api.planningcenteronline.com/services/v2/service_types/852880/plans/52759139/items/717607924/arrangement/attachments");
+
 async function addASong() {
 	try {
 		const planId = await getLatestPlanId();
@@ -18,6 +18,9 @@ async function addASong() {
 
 		const spotifyIds = await getAllSpotifyIds(attachmentIdArray);
 		console.log(spotifyIds);
+
+		const res = await addSongsToPlaylist(spotifyIds);
+		console.log(res);
 	} catch (err) {
 		console.log(err.message);
 	}
@@ -95,4 +98,36 @@ async function getAllSpotifyIds(attachmentIdArrays) {
 	return spotifyIds;
 }
 
-(async () => await addASong())();
+async function addSongsToPlaylist(spotifyIdArray) {
+	const urlParams =
+		"uris=" + spotifyIdArray.map((id) => `spotify:track:${id},`).join("");
+	console.log(urlParams);
+
+	await axios.put(
+		"https://api.spotify.com/v1/playlists/{playlist_id}/tracks",
+		{},
+		{}
+	);
+	return "something";
+}
+
+async function setupSpotify() {
+	const state = generateRandomString(16);
+	// res.cookie(stateKey, state);
+	const res = await axios.get(
+		`https://accounts.spotify.com/authorize?` +
+			quirestring.stringify({
+				client_id: process.env.SPOTIFY_CLIENT_ID,
+				response_type: "code",
+				redirect_uri: REDIRECT_URI,
+				scope: "playlist-modify-private playlist-modify-public",
+				state: state,
+			})
+	);
+	console.log(res.data);
+}
+
+(async () => {
+	await setupSpotify();
+	// await addASong();
+})();
