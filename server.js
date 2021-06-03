@@ -15,7 +15,8 @@ const stateKey = "spotify_auth_state";
 const { getNewToken } = require("./api/spotify");
 let spotifyToken, spotifyRefreshToken;
 const cron = require("node-schedule");
-
+const open = require("open");
+const PORT = process.env.PORT || 8888;
 app.use(morgan("dev"));
 app
 	.use(express.static(__dirname + "/public"))
@@ -117,4 +118,6 @@ app.get("/refresh_token", async function (req, res) {
 	}
 });
 
-app.listen(8888, () => console.log("Listening on 8888"));
+app.listen(PORT, () => console.log(`Listening on ${PORT}`));
+
+open(process.env.HOME_URL);
