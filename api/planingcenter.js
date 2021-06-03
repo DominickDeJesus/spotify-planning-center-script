@@ -6,7 +6,7 @@ const token = Buffer.from(
 
 async function getLatestPlanId() {
 	const { data } = await axios.get(
-		"https://api.planningcenteronline.com/services/v2/service_types/852880/plans?filter=future&order=sort_date&per_page=1",
+		`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans?filter=future&order=sort_date&per_page=1`,
 		{
 			headers: {
 				Authorization: "Basic " + token,
@@ -18,7 +18,7 @@ async function getLatestPlanId() {
 
 async function getSongItemIdArray(planId) {
 	const { data } = await axios.get(
-		`https://api.planningcenteronline.com/services/v2/service_types/852880/plans/${planId}/items?include=song`,
+		`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans/${planId}/items?include=song`,
 		{
 			headers: {
 				Authorization: "Basic " + token,
@@ -52,7 +52,7 @@ async function getSpotifyId(attachmentId) {
 async function getAttachmentIds(planId, songItemId) {
 	try {
 		const res = await axios.get(
-			`https://api.planningcenteronline.com/services/v2/service_types/852880/plans/${planId}/items/${songItemId}/attachments`,
+			`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans/${planId}/items/${songItemId}/attachments`,
 			{
 				headers: {
 					Authorization: "Basic " + token,
