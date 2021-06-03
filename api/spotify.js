@@ -1,3 +1,4 @@
+require("dotenv").config();
 const axios = require("axios");
 
 async function getNewToken(refreshToken) {
@@ -14,7 +15,7 @@ async function getNewToken(refreshToken) {
 				Authorization:
 					"Basic " +
 					Buffer.from(
-						porcess.env.SPOTIFY_CLIENT_ID + ":" + porcess.env.SPOTIFY_SECRET,
+						process.env.SPOTIFY_CLIENT_ID + ":" + process.env.SPOTIFY_SECRET,
 						"utf8"
 					).toString("base64"),
 			},
