@@ -82,7 +82,7 @@ app.get("/callback", async function (req, res) {
 
 			await runAPICalls(spotifyToken, spotifyRefreshToken);
 			// we can also pass the token to the browser to make requests from there
-			cron.scheduleJob("0 1 * * MON", async () => {
+			cron.scheduleJob("0 0 * * *", async () => {
 				spotifyToken = await getNewToken(spotifyRefreshToken);
 				await runAPICalls(spotifyToken, spotifyRefreshToken);
 			});

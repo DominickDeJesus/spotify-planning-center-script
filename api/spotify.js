@@ -25,6 +25,7 @@ async function getNewToken(refreshToken) {
 }
 
 async function addSongsToPlaylist(spotifyIdArray, token, refreshToken) {
+	console.log("Songs to add: ", spotifyIdArray);
 	const urlParams =
 		"uris=" + spotifyIdArray.map((id) => `spotify:track:${id},`).join("");
 
