@@ -4,7 +4,10 @@ const {
 	getSongItemIdArray,
 	getAttachmentIds,
 	getAllSpotifyIds,
+	getYoutubeId,
+	getAllYoutubeIds,
 } = require("./planingcenter");
+const { addYouTubeVideos } = require("./youtubeapi");
 const { addSongsToPlaylist } = require("./spotify");
 
 async function runAPICalls(spotifyToken, spotifyRefresh) {
@@ -18,7 +21,30 @@ async function runAPICalls(spotifyToken, spotifyRefresh) {
 		);
 		attachmentIdArray = [].concat.apply([], attachmentIdArray);
 
-		const spotifyIds = await getAllSpotifyIds(attachmentIdArray);
+		const youtubeAttachIdsArr = attachmentIdArray
+			.filter((attachment) => {
+				return attachment.pco_type === "AttachmentYoutube";
+			})
+			.map((attachment) => {
+				return attachment.id;
+			});
+
+		const spotifyAttachIdsArr = attachmentIdArray
+			.filter((attachment) => {
+				return attachment.pco_type === "AttachmentSpotify";
+			})
+			.map((attachment) => {
+				return attachment.id;
+			});
+
+		//await getYoutubeId(youtubeAttachIdsArr[0]);
+		const spotifyIds = await getAllSpotifyIds(spotifyAttachIdsArr);
+		const youtubeIds = await getAllYoutubeIds(youtubeAttachIdsArr);
+
+		//console.log(youtubeIds);
+
+		await addYouTubeVideos(youtubeIds);
+
 		const res = await addSongsToPlaylist(
 			spotifyIds,
 			spotifyToken,
