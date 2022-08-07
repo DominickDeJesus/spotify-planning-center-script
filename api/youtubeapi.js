@@ -14,11 +14,11 @@ var TOKEN_PATH = TOKEN_DIR + "youtube-nodejs-quickstart.json";
 async function addYouTubeVideos(vidIdsArr) {
 	try {
 		// Load client secrets from a local file.
-		const content = await fs.readFile("client_secret.json");
+		const content = await fs.readFile(process.env.SECRET_PATH+"client_secret.json");
 		// Authorize a client with the loaded credentials, then call the YouTube API.
 		const auth = await authorize(JSON.parse(content));
 
-		getChannel(auth, vidIdsArr);
+		await getChannel(auth, vidIdsArr);
 	} catch (error) {
 		console.log(error);
 	}
@@ -37,12 +37,13 @@ async function authorize(credentials) {
 	var oauth2Client = new OAuth2(clientId, clientSecret, redirectUrl);
 
 	// Check if we have previously stored a token.
-	const token = await fs.readFile(TOKEN_PATH);
+	//const token = await fs.readFile(TOKEN_PATH);
 	try {
+		const token = await fs.readFile(TOKEN_PATH);
 		oauth2Client.credentials = JSON.parse(token);
 		return oauth2Client;
 	} catch (error) {
-		return getNewToken(oauth2Client);
+		return await getNewToken(oauth2Client);
 	}
 }
 
@@ -85,7 +86,7 @@ async function getNewToken(oauth2Client) {
  */
 async function storeToken(token) {
 	try {
-		await fs.mkdirSync(TOKEN_DIR);
+		await fs.mkdir(TOKEN_DIR);
 	} catch (err) {
 		if (err.code != "EEXIST") {
 			throw err;
@@ -118,10 +119,9 @@ async function getChannel(auth, vidIdsArr) {
 			playlistId: "PLXPOUNrfLhtBs-3EI6U56ARVZy_FuWY0A",
 			// Return the playlist items associated with the given video ID.
 		});
-
-		//console.log(res.data.items);
+		console.log("deleting");
 		await deleteAllPlaylistVids(auth, res.data.items);
-
+		console.log(vidIdsArr)
 		const addedSongs = await Promise.all(
 			vidIdsArr.map(async function (id, index) {
 				const response = await service.playlistItems.insert({
@@ -137,7 +137,8 @@ async function getChannel(auth, vidIdsArr) {
 						},
 					},
 				});
-				return response.data.snippet.title.substring(0, 15) + "...";
+				console.log(response.data.error)
+				return response.data.snippet.title;
 			})
 		);
 
@@ -150,11 +151,15 @@ async function getChannel(auth, vidIdsArr) {
 async function deleteAllPlaylistVids(auth, vidIdsArr) {
 	google.options({ auth });
 	const service = google.youtube("v3");
-
+	for(let i = 0; i < vidIdsArr.length; i++){
+		const res = await service.playlistItems.delete({ "id": vidIdsArr[i].id});
+	}
+/*
 	vidIdsArr.forEach(async function (vid) {
-		//console.log(vid.id);
-		await service.playlistItems.delete({ id: vid.id });
+		console.log(vid.id);
+		await service.playlistItems.delete({"id": vid.id});
 	});
+*/
 }
 
 module.exports = { addYouTubeVideos };

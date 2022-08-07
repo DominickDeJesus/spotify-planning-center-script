@@ -41,8 +41,8 @@ async function runAPICalls(spotifyToken, spotifyRefresh) {
 		const spotifyIds = await getAllSpotifyIds(spotifyAttachIdsArr);
 		const youtubeIds = await getAllYoutubeIds(youtubeAttachIdsArr);
 
-		//console.log(youtubeIds);
-
+		console.log(youtubeIds);
+		console.log("adding youtube videos")
 		await addYouTubeVideos(youtubeIds);
 
 		const res = await addSongsToPlaylist(
@@ -54,5 +54,5 @@ async function runAPICalls(spotifyToken, spotifyRefresh) {
 		console.log(err.message);
 	}
 }
-
+//addYouTubeVideos(["mC-zw0zCCtg"])
 module.exports = { runAPICalls };
