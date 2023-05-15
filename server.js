@@ -124,6 +124,16 @@ app.get("/refresh_token", async function (req, res) {
 	}
 });
 
+app.post("/plohooks", async function (req, res) {
+	try {
+		res.send({
+			response: req,
+		});
+	} catch (error) {
+		res.send(error);
+	}
+});
+
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
 //open(process.env.HOME_URL);
