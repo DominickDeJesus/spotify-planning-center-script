@@ -43,7 +43,7 @@ async function runAPICalls(spotifyToken, spotifyRefresh) {
 
 		console.log(youtubeIds);
 		console.log("adding youtube videos")
-		await addYouTubeVideos(youtubeIds);
+		//await addYouTubeVideos(youtubeIds);
 
 		const res = await addSongsToPlaylist(
 			spotifyIds,

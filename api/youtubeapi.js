@@ -9,12 +9,13 @@ var SCOPES = ["https://www.googleapis.com/auth/youtube"];
 var TOKEN_DIR =
 	(process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) +
 	"/.credentials/";
-var TOKEN_PATH = TOKEN_DIR + "youtube-nodejs-quickstart.json";
+// var TOKEN_PATH = TOKEN_DIR + "youtube-nodejs-quickstart.json";
+var TOKEN_PATH = TOKEN_DIR + "client_secret.json";
 
 async function addYouTubeVideos(vidIdsArr) {
 	try {
 		// Load client secrets from a local file.
-		const content = await fs.readFile(process.env.SECRET_PATH+"client_secret.json");
+		const content = await fs.readFile(TOKEN_PATH);
 		// Authorize a client with the loaded credentials, then call the YouTube API.
 		const auth = await authorize(JSON.parse(content));
 
@@ -31,9 +32,9 @@ async function addYouTubeVideos(vidIdsArr) {
  * @param {function} callback The callback to call with the authorized client.
  */
 async function authorize(credentials) {
-	var clientSecret = credentials.installed.client_secret;
-	var clientId = credentials.installed.client_id;
-	var redirectUrl = credentials.installed.redirect_uris[0];
+	var clientSecret = credentials.client_secret;
+	var clientId = credentials.client_id;
+	var redirectUrl = credentials.redirect_uris[1];
 	var oauth2Client = new OAuth2(clientId, clientSecret, redirectUrl);
 
 	// Check if we have previously stored a token.
@@ -121,7 +122,7 @@ async function getChannel(auth, vidIdsArr) {
 		});
 		console.log("deleting");
 		await deleteAllPlaylistVids(auth, res.data.items);
-		console.log(vidIdsArr)
+		console.log(vidIdsArr);
 		const addedSongs = await Promise.all(
 			vidIdsArr.map(async function (id, index) {
 				const response = await service.playlistItems.insert({
@@ -137,7 +138,7 @@ async function getChannel(auth, vidIdsArr) {
 						},
 					},
 				});
-				console.log(response.data.error)
+				console.log(response.data.error);
 				return response.data.snippet.title;
 			})
 		);
@@ -151,10 +152,10 @@ async function getChannel(auth, vidIdsArr) {
 async function deleteAllPlaylistVids(auth, vidIdsArr) {
 	google.options({ auth });
 	const service = google.youtube("v3");
-	for(let i = 0; i < vidIdsArr.length; i++){
-		const res = await service.playlistItems.delete({ "id": vidIdsArr[i].id});
+	for (let i = 0; i < vidIdsArr.length; i++) {
+		const res = await service.playlistItems.delete({ id: vidIdsArr[i].id });
 	}
-/*
+	/*
 	vidIdsArr.forEach(async function (vid) {
 		console.log(vid.id);
 		await service.playlistItems.delete({"id": vid.id});
