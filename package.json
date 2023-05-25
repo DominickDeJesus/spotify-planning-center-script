@@ -28,6 +28,7 @@
     "morgan": "^1.10.0",
     "node-schedule": "^2.1.0",
     "open": "^8.4.0",
-    "puppeteer": "^16.1.0"
+    "puppeteer": "^16.1.0",
+    "winston": "^3.8.2"
   }
 }
