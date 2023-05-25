@@ -3,3 +3,6 @@ node_modules
 client_secret.*
 .credentials
 test.js
+
+logs/
+*.log
