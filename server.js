@@ -130,6 +130,7 @@ app.use(express.json());
 
 app.post("/plohooks", async function (req, res) {
 	try {
+		await runAPICalls(spotifyToken, spotifyRefreshToken);
 		res.send({
 			response: "Webhook recieved!",
 		});
