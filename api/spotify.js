@@ -1,5 +1,6 @@
 require("dotenv").config();
 const axios = require("axios");
+const { logger } = require("./utils/logger");
 
 async function getNewToken(refreshToken) {
 	const params = new URLSearchParams();
@@ -38,6 +39,8 @@ async function addSongsToPlaylist(spotifyIdArray, token) {
 		console.log("Songs added!");
 		return res;
 	} catch (error) {
+		logger.log("error", error);
+
 		console.log(error.message);
 	}
 }
@@ -61,6 +64,8 @@ async function prependNewSongsToPlaylist(
 		console.log("Songs added!");
 		return res;
 	} catch (error) {
+		logger.log("error", error);
+
 		console.log(error.message);
 	}
 }
@@ -72,6 +77,9 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}?${urlParams}`,
 			{ headers: { Authorization: "Bearer " + token } }
 		);
+
+		logger.log("info", res);
+
 		const nonDuplicateIds = spotifyIdArray.map((track) => {
 			if (res.body.tracks.inlcudes(track.id)) {
 				return track.id;
@@ -80,6 +88,8 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 
 		return nonDuplicateIds;
 	} catch (error) {
+		logger.log("error", error);
+
 		console.log(error.message);
 	}
 }
