@@ -70,7 +70,6 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 	try {
 		const res = await axios.get(
 			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}?${urlParams}`,
-			{},
 			{ headers: { Authorization: "Bearer " + token } }
 		);
 		const nonDuplicateIds = spotifyIdArray.map((track) => {
