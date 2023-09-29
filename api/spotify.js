@@ -24,7 +24,7 @@ async function getNewToken(refreshToken) {
 	return response.data.access_token;
 }
 
-async function addSongsToPlaylist(spotifyIdArray, token, refreshToken) {
+async function addSongsToPlaylist(spotifyIdArray, token) {
 	console.log("Songs to add: ", spotifyIdArray);
 	const urlParams =
 		"uris=" + spotifyIdArray.map((id) => `spotify:track:${id},`).join("");
@@ -42,4 +42,63 @@ async function addSongsToPlaylist(spotifyIdArray, token, refreshToken) {
 	}
 }
 
-module.exports = { getNewToken, addSongsToPlaylist };
+async function prependNewSongsToPlaylist(
+	spotifyIdArray,
+	spotifyPlaylistId,
+	token
+) {
+	const urlParams =
+		"uris=" +
+		spotifyIdArray.map((id) => `spotify:track:${id},`).join("") +
+		"&position=0";
+
+	try {
+		const res = await axios.post(
+			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}/tracks?${urlParams}`,
+			{},
+			{ headers: { Authorization: "Bearer " + token } }
+		);
+		console.log("Songs added!");
+		return res;
+	} catch (error) {
+		console.log(error.message);
+	}
+}
+async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
+	const urlParams = "fields=items(track(name,id))";
+
+	try {
+		const res = await axios.get(
+			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}?${urlParams}`,
+			{},
+			{ headers: { Authorization: "Bearer " + token } }
+		);
+		const nonDuplicateIds = spotifyIdArray.map((track) => {
+			if (res.body.tracks.inlcudes(track.id)) {
+				return track.id;
+			}
+		});
+
+		return nonDuplicateIds;
+	} catch (error) {
+		console.log(error.message);
+	}
+}
+
+function getSongSpotifyIdFromUrl(spotifyUrl) {
+	try {
+		const regex =
+			/\bhttps?:\/\/[^/]*\bspotify\.com\/(user|episode|playlist|track)\/([^\s?]+)/;
+		return spotifyUrl.match(regex)[2];
+	} catch (error) {
+		console.log(error.message);
+	}
+}
+
+module.exports = {
+	getNewToken,
+	addSongsToPlaylist,
+	prependNewSongsToPlaylist,
+	getSongsNotInPlaylist,
+	getSongSpotifyIdFromUrl,
+};

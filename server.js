@@ -15,12 +15,18 @@ const { logger } = require("./utils/logger");
 const client_id = process.env.SPOTIFY_CLIENT_ID; // Your client id
 const client_secret = process.env.SPOTIFY_SECRET; // Your secret
 const redirect_uri = process.env.REDIRECT_URI; // Your redirect uri
+const NEW_PLAYLIST_ID = process.env.NEW_PLAYLIST_ID; // Your playlist to add to
 const PORT = process.env.PORT || 8888;
 const stateKey = "spotify_auth_state";
 let spotifyToken, spotifyRefreshToken;
 //API Functions
 const { runAPICalls } = require("./api");
-const { getNewToken } = require("./api/spotify");
+const {
+	getNewToken,
+	prependNewSongsToPlaylist,
+	getSongsNotInPlaylist,
+	getSongSpotifyIdFromUrl,
+} = require("./api/spotify");
 //const { launchBrowser } = require("./autobrowser");
 //const { addYouTubeVideos } = require("./api/youtubeapi");
 
@@ -156,6 +162,20 @@ app.post("/slackhooks", async function (req, res) {
 				"The link event was triggered - Spotify links: %s",
 				songLinks
 			);
+
+			const linkIds = songLinks.map((song) => {
+				const currentId = getSongSpotifyIdFromUrl(song);
+				if (currentId) return currentId;
+			});
+
+			const songsToAdd = await getSongsNotInPlaylist(
+				linkIds,
+				NEW_PLAYLIST_ID,
+				spotifyToken
+			);
+
+			await prependNewSongsToPlaylist(songsToAdd, spotifyToken);
+			logger.log("info", "Songs to add: %s", songsToAdd);
 		}
 
 		logger.log("info", "Request body for Slack webhook: %s", req.body);
