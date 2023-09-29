@@ -146,7 +146,17 @@ app.post("/slackhooks", async function (req, res) {
 		res.send({
 			challenge: req.body.challenge,
 		});
-		logger.log("info", "The event for the Slack webhook: %s", req.body.event);
+
+		if (req.body?.event?.type == "link_shared") {
+			const songLinks = req.body.event.links.map((link) => {
+				if (link.domain == "open.spotify.com") return link.url;
+			});
+			logger.log(
+				"info",
+				"The link event was triggered - Spotify links: %s",
+				songLinks
+			);
+		}
 
 		logger.log("info", "Request body for Slack webhook: %s", req.body);
 	} catch (error) {
