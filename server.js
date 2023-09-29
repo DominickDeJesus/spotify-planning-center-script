@@ -146,6 +146,8 @@ app.post("/slackhooks", async function (req, res) {
 		res.send({
 			challenge: req.body.challenge,
 		});
+		logger.log("info", "The event for the Slack webhook: %s", req.body.event);
+
 		logger.log("info", "Request body for Slack webhook: %s", req.body);
 	} catch (error) {
 		res.status(500).send("Webhook encountered an error.");
