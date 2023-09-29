@@ -1,64 +1,28 @@
 require("dotenv").config();
-const puppeteer = require("puppeteer");
+//server dependancies
 const express = require("express");
 const app = express();
 const cors = require("cors");
 const querystring = require("querystring");
 const cookieParser = require("cookie-parser");
 const { generateRandomString } = require("./utils");
-const morgan = require("morgan");
+const cron = require("node-schedule");
 const { default: axios } = require("axios");
+//loggers
+const morgan = require("morgan");
+const { logger } = require("./utils/logger");
+//env and global vars
 const client_id = process.env.SPOTIFY_CLIENT_ID; // Your client id
 const client_secret = process.env.SPOTIFY_SECRET; // Your secret
 const redirect_uri = process.env.REDIRECT_URI; // Your redirect uri
-const { runAPICalls } = require("./api");
-const stateKey = "spotify_auth_state";
-const { getNewToken } = require("./api/spotify");
-let spotifyToken, spotifyRefreshToken;
-const cron = require("node-schedule");
-const open = require("open");
 const PORT = process.env.PORT || 8888;
-const browserOption = {
-	args: ["--no-sandbox", "--disable-setuid-sandbox"],
-	executablePath: "chromium-browser",
-};
-const { addYouTubeVideos } = require("./api/youtubeapi");
-let page, browser;
-//await page.click();
-//addYouTubeVideos(["asdfa"]);
-async function launchBrowser() {
-	try {
-		browser = await puppeteer.launch({
-			headless: false,
-			...browserOption,
-		});
-		page = await browser.newPage();
-		await page.goto("http://localhost:8888", {
-			waitUntil: "load",
-		});
-		//await page.setDefaultNavigationTimeout(0);
-		await page.click("#login > a");
-		await page.waitForNavigation();
-		await page.click("button[data-testid='facebook-login']");
-		const email = process.env.EMAIL.toString();
-		const pass = process.env.PASSWORD.toString();
-		console.log("Waiting for page navigation...");
-		await page.waitForSelector("#email");
-		//await page.waitForNavigation({waitUntil: 'networkidle0'});
-		console.log("Typing email");
-		await page.evaluate(
-			(text) => (document.getElementById("email").value = text),
-			email
-		);
-		await page.evaluate(
-			(text) => (document.getElementById("pass").value = text),
-			pass
-		);
-		await page.click("#loginbutton");
-	} catch (e) {
-		console.log(e);
-	}
-}
+const stateKey = "spotify_auth_state";
+let spotifyToken, spotifyRefreshToken;
+//API Functions
+const { runAPICalls } = require("./api");
+const { getNewToken } = require("./api/spotify");
+//const { launchBrowser } = require("./autobrowser");
+//const { addYouTubeVideos } = require("./api/youtubeapi");
 
 app.use(morgan("dev"));
 app
@@ -157,25 +121,30 @@ app.get("/refresh_token", async function (req, res) {
 			access_token: token,
 		});
 	} catch (error) {
-		res.send(error);
+		res.status(500).send("Refreshing token encountered an error.");
+		logger.error(error);
 	}
 });
+
+app.use(express.json());
 
 app.post("/plohooks", async function (req, res) {
 	try {
+		await runAPICalls(spotifyToken, spotifyRefreshToken);
 		res.send({
-			response: req,
+			response: "Webhook recieved!",
 		});
+		logger.log("info", "Request body for plo webhook: %s", req.body);
 	} catch (error) {
-		res.send(error);
+		res.status(500).send("Webhook encountered an error.");
+		logger.log("error", error);
 	}
 });
 
-app.listen(PORT, () => console.log(`Listening on ${PORT}`));
+app.listen(PORT, () => logger.info(`Server listening on ${PORT}`));
 
-try {
-	launchBrowser();
-} catch (e) {
-	console.log(e);
-}
-//open(process.env.HOME_URL);
+// try {
+// 	//launchBrowser();
+// } catch (e) {
+// 	console.log(e);
+// }

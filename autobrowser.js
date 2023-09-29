@@ -1,22 +1,7 @@
 const puppeteer = require("puppeteer");
 
-/**
- * Generates a random string containing numbers and letters
- * @param  {number} length The length of the string
- * @return {string} The generated string
- */
-const generateRandomString = function (length) {
-	var text = "";
-	var possible =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-	for (var i = 0; i < length; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
-};
-
-async function launchBrowser(email, pass) {
+async function launchBrowser() {
+	let page, browser;
 	const browserOption = {
 		args: ["--no-sandbox", "--disable-setuid-sandbox"],
 		executablePath: "chromium-browser",
@@ -35,7 +20,8 @@ async function launchBrowser(email, pass) {
 		await page.click("#login > a");
 		await page.waitForNavigation();
 		await page.click("button[data-testid='facebook-login']");
-
+		const email = process.env.EMAIL.toString();
+		const pass = process.env.PASSWORD.toString();
 		console.log("Waiting for page navigation...");
 		await page.waitForSelector("#email");
 		//await page.waitForNavigation({waitUntil: 'networkidle0'});
@@ -53,5 +39,3 @@ async function launchBrowser(email, pass) {
 		console.log(e);
 	}
 }
-
-module.exports = { generateRandomString, launchBrowser };

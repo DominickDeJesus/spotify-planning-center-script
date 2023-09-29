@@ -32,6 +32,23 @@ async function getSongItemIdArray(planId) {
 		.map((song) => song.id);
 }
 
+async function getAllSongItemIdArray() {
+	const songsArr = [];
+	do {
+		let query = links.next
+			? `https://api.planningcenteronline.com/services/v2/songs?per_page=100`
+			: links.next;
+		const { data, links } = await axios.get(query, {
+			headers: {
+				Authorization: "Basic " + token,
+			},
+		});
+		songsArr.push(...data);
+	} while (links.next);
+
+	return songsArr.map((song) => song.id);
+}
+
 async function getSpotifyId(attachmentId) {
 	try {
 		const res = await axios.post(
