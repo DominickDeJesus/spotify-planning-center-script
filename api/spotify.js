@@ -1,6 +1,6 @@
 require("dotenv").config();
 const axios = require("axios");
-const { logger } = require("./utils/logger");
+const { logger } = require("../utils/logger");
 
 async function getNewToken(refreshToken) {
 	const params = new URLSearchParams();
