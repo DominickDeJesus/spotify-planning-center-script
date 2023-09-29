@@ -141,6 +141,18 @@ app.post("/plohooks", async function (req, res) {
 	}
 });
 
+app.post("/slackhooks", async function (req, res) {
+	try {
+		res.send({
+			challenge: req.body.challenge,
+		});
+		logger.log("info", "Request body for Slack webhook: %s", req.body);
+	} catch (error) {
+		res.status(500).send("Webhook encountered an error.");
+		logger.log("error", error);
+	}
+});
+
 app.listen(PORT, () => logger.info(`Server listening on ${PORT}`));
 
 // try {
