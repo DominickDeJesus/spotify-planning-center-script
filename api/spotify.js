@@ -77,14 +77,14 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}?${urlParams}`,
 			{ headers: { Authorization: "Bearer " + token } }
 		);
-
-		logger.log("info", res);
+		logger.log("info", "Bearer: %s", token);
 
 		const nonDuplicateIds = spotifyIdArray.map((track) => {
 			if (res.body.tracks.inlcudes(track.id)) {
 				return track.id;
 			}
 		});
+		logger.log("info", "Dup ids: %s", nonDuplicateIds);
 
 		return nonDuplicateIds;
 	} catch (error) {
