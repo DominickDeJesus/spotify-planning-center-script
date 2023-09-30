@@ -15,7 +15,7 @@ const { logger } = require("./utils/logger");
 const client_id = process.env.SPOTIFY_CLIENT_ID; // Your client id
 const client_secret = process.env.SPOTIFY_SECRET; // Your secret
 const redirect_uri = process.env.REDIRECT_URI; // Your redirect uri
-const NEW_PLAYLIST_ID = process.env.NEW_PLAYLIST_ID; // Your playlist to add to
+const NEW_PLAYLIST_ID = process.env.NEW_PLAYLIST_ID || "6g8iDmDLvVVoCyWIzSmPHF"; // Your playlist to add to
 const PORT = process.env.PORT || 8888;
 const stateKey = "spotify_auth_state";
 let spotifyToken, spotifyRefreshToken;
