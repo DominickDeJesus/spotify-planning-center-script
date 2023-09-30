@@ -174,7 +174,11 @@ app.post("/slackhooks", async function (req, res) {
 				spotifyToken
 			);
 			logger.log("info", "Spotify links to add: %s", songsToAdd);
-			await prependNewSongsToPlaylist(songsToAdd, spotifyToken);
+			await prependNewSongsToPlaylist(
+				songsToAdd,
+				NEW_PLAYLIST_ID,
+				spotifyToken
+			);
 			logger.log("info", "Songs to add: %s", songsToAdd);
 		}
 
