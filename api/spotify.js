@@ -81,7 +81,7 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 		});
 
 		const nonDuplicateIds = spotifyIdArray.map((track) => {
-			if (curPlaylistTrackIds?.inlcudes(track.id)) {
+			if (curPlaylistTrackIds?.includes(track.id)) {
 				return track.id;
 			}
 		});
