@@ -66,7 +66,7 @@ async function prependNewSongsToPlaylist(
 	}
 }
 async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
-	const urlParams = "fields=items(track(name,id))";
+	const urlParams = "fields=tracks.items(track(name,id))";
 
 	try {
 		const res = await axios.get(
@@ -76,9 +76,12 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 		logger.log("info", "Bearer: %s", token);
 		logger.log("info", "Res body: %s", res);
 		logger.log("info", "ID arrays: %s", spotifyIdArray);
+		const curPlaylistTrackIds = res.body.tracks.items.map((track) => {
+			return track.id;
+		});
 
 		const nonDuplicateIds = spotifyIdArray.map((track) => {
-			if (res.body.tracks.inlcudes(track.id)) {
+			if (curPlaylistTrackIds.inlcudes(track.id)) {
 				return track.id;
 			}
 		});
