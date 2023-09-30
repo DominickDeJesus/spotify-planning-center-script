@@ -74,11 +74,12 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 			{ headers: { Authorization: "Bearer " + token } }
 		);
 		logger.log("info", "Bearer: %s", token);
-		logger.log("info", "Res body: %s", res);
+		logger.log("info", "Res body: %s", res.data);
 		logger.log("info", "ID arrays: %s", spotifyIdArray);
 		const curPlaylistTrackIds = res?.data?.tracks?.items?.map((track) => {
 			return track?.id;
 		});
+		logger.log("info", "curPlaylistTrackIds : %s", curPlaylistTrackIds);
 
 		const nonDuplicateIds = spotifyIdArray.map((track) => {
 			if (curPlaylistTrackIds?.includes(track.id)) {
