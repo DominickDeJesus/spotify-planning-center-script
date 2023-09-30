@@ -25,14 +25,14 @@ async function getNewToken(refreshToken) {
 	return response.data.access_token;
 }
 
-async function addSongsToPlaylist(spotifyIdArray, token) {
+async function addSongsToPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 	console.log("Songs to add: ", spotifyIdArray);
 	const urlParams =
 		"uris=" + spotifyIdArray.map((id) => `spotify:track:${id},`).join("");
 
 	try {
 		const res = await axios.put(
-			`https://api.spotify.com/v1/playlists/${process.env.PLAYLIST_ID}/tracks?${urlParams}`,
+			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}/tracks?${urlParams}`,
 			{},
 			{ headers: { Authorization: "Bearer " + token } }
 		);

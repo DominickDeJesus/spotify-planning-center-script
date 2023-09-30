@@ -15,6 +15,7 @@ const { logger } = require("./utils/logger");
 const client_id = process.env.SPOTIFY_CLIENT_ID; // Your client id
 const client_secret = process.env.SPOTIFY_SECRET; // Your secret
 const redirect_uri = process.env.REDIRECT_URI; // Your redirect uri
+const PLAYLIST_ID = process.env.PLAYLIST_ID || "3oSx181eTTYOvzgY2tF1fa"; // Your playlist to add to
 const NEW_PLAYLIST_ID = process.env.NEW_PLAYLIST_ID || "6g8iDmDLvVVoCyWIzSmPHF"; // Your playlist to add to
 const PORT = process.env.PORT || 8888;
 const stateKey = "spotify_auth_state";
@@ -93,11 +94,21 @@ app.get("/callback", async function (req, res) {
 			spotifyToken = response.data.access_token;
 			spotifyRefreshToken = response.data.refresh_token;
 
-			await runAPICalls(spotifyToken, spotifyRefreshToken);
+			await runAPICalls(
+				spotifyToken,
+				spotifyRefreshToken,
+				PLAYLIST_ID,
+				NEW_PLAYLIST_ID
+			);
 			// we can also pass the token to the browser to make requests from there
 			cron.scheduleJob("0 0 * * *", async () => {
 				spotifyToken = await getNewToken(spotifyRefreshToken);
-				await runAPICalls(spotifyToken, spotifyRefreshToken);
+				await runAPICalls(
+					spotifyToken,
+					spotifyRefreshToken,
+					PLAYLIST_ID,
+					NEW_PLAYLIST_ID
+				);
 			});
 			res.redirect(
 				"/#" +
@@ -136,6 +147,7 @@ app.use(express.json());
 
 app.post("/plohooks", async function (req, res) {
 	try {
+		if (!spotifyToken) throw new Error("Spotify Token is not set!");
 		await runAPICalls(spotifyToken, spotifyRefreshToken);
 		res.send({
 			response: "Webhook recieved!",
@@ -152,6 +164,8 @@ app.post("/slackhooks", async function (req, res) {
 		res.send({
 			challenge: req.body.challenge,
 		});
+
+		if (!spotifyToken) throw new Error("Spotify Token is not set!");
 
 		if (req.body?.event?.type == "link_shared") {
 			const songLinks = req.body.event.links.map((link) => {

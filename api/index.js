@@ -10,7 +10,12 @@ const {
 const { addYouTubeVideos } = require("./youtubeapi");
 const { addSongsToPlaylist } = require("./spotify");
 
-async function runAPICalls(spotifyToken, spotifyRefresh) {
+async function runAPICalls(
+	spotifyToken,
+	spotifyRefresh,
+	ploPlaylistId,
+	spotifyPlaylistId
+) {
 	try {
 		const planId = await getLatestPlanId();
 		const songItemIdArray = await getSongItemIdArray(planId);
@@ -42,13 +47,13 @@ async function runAPICalls(spotifyToken, spotifyRefresh) {
 		const youtubeIds = await getAllYoutubeIds(youtubeAttachIdsArr);
 
 		console.log(youtubeIds);
-		console.log("adding youtube videos")
+		console.log("adding youtube videos");
 		//await addYouTubeVideos(youtubeIds);
 
 		const res = await addSongsToPlaylist(
 			spotifyIds,
-			spotifyToken,
-			spotifyRefresh
+			spotifyPlaylistId,
+			spotifyToken
 		);
 	} catch (err) {
 		console.log(err.message);
