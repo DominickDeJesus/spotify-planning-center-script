@@ -92,7 +92,7 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 		return nonDuplicateIds;
 	} catch (error) {
 		logger.log("error", error);
-		throw new Error(error);
+		return [];
 	}
 }
 
