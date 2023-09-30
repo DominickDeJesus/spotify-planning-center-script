@@ -52,7 +52,7 @@ async function runAPICalls(
 
 		const res = await addSongsToPlaylist(
 			spotifyIds,
-			spotifyPlaylistId,
+			ploPlaylistId,
 			spotifyToken
 		);
 	} catch (err) {
