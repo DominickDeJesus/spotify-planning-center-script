@@ -40,8 +40,6 @@ async function addSongsToPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 		return res;
 	} catch (error) {
 		logger.log("error", error);
-
-		console.log(error.message);
 	}
 }
 
@@ -65,8 +63,6 @@ async function prependNewSongsToPlaylist(
 		return res;
 	} catch (error) {
 		logger.log("error", error);
-
-		console.log(error.message);
 	}
 }
 async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
@@ -91,8 +87,6 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 		return nonDuplicateIds;
 	} catch (error) {
 		logger.log("error", error);
-
-		console.log(error.message);
 	}
 }
 
@@ -102,7 +96,7 @@ function getSongSpotifyIdFromUrl(spotifyUrl) {
 			/\bhttps?:\/\/[^/]*\bspotify\.com\/(user|episode|playlist|track)\/([^\s?]+)/;
 		return spotifyUrl.match(regex)[2];
 	} catch (error) {
-		console.log(error.message);
+		logger.log("error", error);
 	}
 }
 
