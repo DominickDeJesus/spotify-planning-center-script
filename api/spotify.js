@@ -69,12 +69,12 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 	const urlParams = "fields=tracks.items(track(name,id))";
 
 	try {
-		const res = await axios.get(
+		const { data: response } = await axios.get(
 			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}?${urlParams}`,
 			{ headers: { Authorization: "Bearer " + token } }
 		);
 		logger.log("info", "Bearer: %s", token);
-		logger.log("info", "Res body: %s", res.data.tracks);
+		logger.log("info", "Res body: %s", response);
 		logger.log("info", "ID arrays: %s", spotifyIdArray);
 		logger.log("info", "spotifyPlaylistId arrays: %s", spotifyPlaylistId);
 		const curPlaylistTrackIds = res?.data?.tracks?.map((track) => {
