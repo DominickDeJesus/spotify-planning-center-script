@@ -181,13 +181,13 @@ app.post("/slackhooks", async function (req, res) {
 				const currentId = getSongSpotifyIdFromUrl(song);
 				if (currentId) return currentId;
 			});
-			logger.log("info", "Spotify links including duplicates: %s", linkIds);
+
 			const songsToAdd = await getSongsNotInPlaylist(
 				linkIds,
 				NEW_PLAYLIST_ID,
 				spotifyToken
 			);
-			logger.log("info", "Spotify links to add: %s", songsToAdd);
+
 			await prependNewSongsToPlaylist(
 				songsToAdd,
 				NEW_PLAYLIST_ID,
@@ -195,8 +195,6 @@ app.post("/slackhooks", async function (req, res) {
 			);
 			logger.log("info", "Songs to add: %s", songsToAdd);
 		}
-
-		logger.log("info", "Request body for Slack webhook: %s", req.body);
 	} catch (error) {
 		res.status(500).send("Webhook encountered an error.");
 		logger.log("error", error);

@@ -48,18 +48,17 @@ async function prependNewSongsToPlaylist(
 	spotifyPlaylistId,
 	token
 ) {
-	const urlParams =
-		"uris=" +
-		spotifyIdArray.map((id) => `spotify:track:${id},`).join("") +
-		"&position=0";
-
 	try {
+		const urlParams =
+			"uris=" +
+			spotifyIdArray.map((id) => `spotify:track:${id},`).join("") +
+			"&position=0";
+
 		const res = await axios.post(
 			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}/tracks?${urlParams}`,
 			{},
 			{ headers: { Authorization: "Bearer " + token } }
 		);
-		console.log("Songs added!");
 		return res;
 	} catch (error) {
 		logger.log("error", error);
@@ -73,19 +72,16 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 			`https://api.spotify.com/v1/playlists/${spotifyPlaylistId}?${urlParams}`,
 			{ headers: { Authorization: "Bearer " + token } }
 		);
-		logger.log("info", "spotifyPlaylistId arrays: %s", spotifyPlaylistId);
-		logger.log("info", "response arrays: %s", response);
+
 		const curPlaylistTrackIds = response?.tracks?.items?.map((track) => {
 			return track?.track?.id;
 		});
-		logger.log("info", "curPlaylistTrackIds : %s", curPlaylistTrackIds);
 
 		const nonDuplicateIds = spotifyIdArray?.map((track) => {
-			if (curPlaylistTrackIds?.includes(track)) {
+			if (!curPlaylistTrackIds?.includes(track)) {
 				return track;
 			}
 		});
-		logger.log("info", "Dup ids: %s", nonDuplicateIds);
 
 		return nonDuplicateIds;
 	} catch (error) {
