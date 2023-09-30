@@ -78,7 +78,7 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 		logger.log("info", "ID arrays: %s", spotifyIdArray);
 		logger.log("info", "spotifyPlaylistId arrays: %s", spotifyPlaylistId);
 		const curPlaylistTrackIds = res?.data?.tracks?.items?.map((track) => {
-			return track?.id;
+			return track?.track?.id;
 		});
 		logger.log("info", "curPlaylistTrackIds : %s", curPlaylistTrackIds);
 
