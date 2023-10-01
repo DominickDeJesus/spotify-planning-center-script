@@ -8,6 +8,7 @@ const cookieParser = require("cookie-parser");
 const { generateRandomString } = require("./utils");
 const cron = require("node-schedule");
 const { default: axios } = require("axios");
+const errorHandler = require("errorhandler");
 //loggers
 const morgan = require("morgan");
 const { logger } = require("./utils/logger");
@@ -200,6 +201,8 @@ app.post("/slackhooks", async function (req, res) {
 		logger.log("error", error);
 	}
 });
+
+app.use(errorHandler({ dumpExceptions: true, showStack: true }));
 
 app.listen(PORT, () => logger.info(`Server listening on ${PORT}`));
 
