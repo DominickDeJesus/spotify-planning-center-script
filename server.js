@@ -162,10 +162,6 @@ app.post("/plohooks", async function (req, res) {
 
 app.post("/slackhooks", async function (req, res) {
 	try {
-		res.send({
-			challenge: req.body.challenge,
-		});
-
 		if (!spotifyToken) throw new Error("Spotify Token is not set!");
 
 		if (req.body?.event?.type == "link_shared") {
@@ -199,6 +195,10 @@ app.post("/slackhooks", async function (req, res) {
 				"Songs that were added from slack to add: %s",
 				songsAdded
 			);
+
+			res.send({
+				challenge: req.body.challenge,
+			});
 		}
 	} catch (error) {
 		res.status(500).send("Webhook encountered an error.");
