@@ -189,12 +189,16 @@ app.post("/slackhooks", async function (req, res) {
 				spotifyToken
 			);
 
-			await prependNewSongsToPlaylist(
+			const songsAdded = await prependNewSongsToPlaylist(
 				songsToAdd,
 				NEW_PLAYLIST_ID,
 				spotifyToken
 			);
-			logger.log("info", "Songs to add: %s", songsToAdd);
+			logger.log(
+				"info",
+				"Songs that were added from slack to add: %s",
+				songsAdded
+			);
 		}
 	} catch (error) {
 		res.status(500).send("Webhook encountered an error.");
