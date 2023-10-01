@@ -49,6 +49,9 @@ async function prependNewSongsToPlaylist(
 	token
 ) {
 	try {
+		if (!spotifyIdArray || spotifyIdArray.length > 0)
+			throw new Error("No Ids to add, passedin ids: " + spotifyIdUri);
+
 		const urlParams =
 			"uris=" +
 			spotifyIdArray.map((id) => `spotify:track:${id},`).join("") +
