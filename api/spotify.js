@@ -37,8 +37,13 @@ async function getNewToken(refreshToken) {
 
 async function addSongsToPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 	try {
-		if (!spotifyIdArray || spotifyIdArray.length <= 0)
+		if (
+			!spotifyIdArray ||
+			!Array.isArray(spotifyIdArray) ||
+			spotifyIdArray.length == 0
+		) {
 			throw new Error("No Ids to add! Passed in ids: " + spotifyIdArray);
+		}
 		if (!spotifyPlaylistId)
 			throw new Error(
 				"No playlist id provided! Passed in id: " + spotifyPlaylistId
@@ -72,8 +77,13 @@ async function prependNewSongsToPlaylist(
 	token
 ) {
 	try {
-		if (!spotifyIdArray || spotifyIdArray.length <= 0)
+		if (
+			!spotifyIdArray ||
+			!Array.isArray(spotifyIdArray) ||
+			spotifyIdArray.length == 0
+		) {
 			throw new Error("No Ids to add! Passed in ids: " + spotifyIdArray);
+		}
 		if (!spotifyPlaylistId)
 			throw new Error(
 				"No playlist id provided! Passed in id: " + spotifyPlaylistId
@@ -107,8 +117,13 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 	const urlParams = "fields=tracks.items(track(name,id))";
 
 	try {
-		if (!spotifyIdArray || spotifyIdArray.length <= 0)
+		if (
+			!spotifyIdArray ||
+			!Array.isArray(spotifyIdArray) ||
+			spotifyIdArray.length == 0
+		) {
 			throw new Error("No Ids to add! Passed in ids: " + spotifyIdArray);
+		}
 		if (!spotifyPlaylistId)
 			throw new Error(
 				"No playlist id provided! Passed in id: " + spotifyPlaylistId
@@ -122,11 +137,11 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 		);
 
 		const curPlaylistTrackIds = response?.tracks?.items?.map((track) => {
-			return track?.track?.id;
+			if (track?.track?.id) return track.track.id;
 		});
 
-		const nonDuplicateIds = spotifyIdArray?.map((track) => {
-			if (!curPlaylistTrackIds?.includes(track)) {
+		const nonDuplicateIds = spotifyIdArray?.filter((track) => {
+			if (!curPlaylistTrackIds.includes(track)) {
 				return track;
 			}
 		});
