@@ -4,7 +4,7 @@ const { logger } = require("../utils/logger");
 
 async function getNewToken(refreshToken) {
 	try {
-		if (!token)
+		if (!refreshToken)
 			throw new Error(
 				"No auth refresh token provided! Passed in token: " + refreshToken
 			);
@@ -37,7 +37,7 @@ async function getNewToken(refreshToken) {
 
 async function addSongsToPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 	try {
-		if (!spotifyIdArray || spotifyIdArray.length > 0)
+		if (!spotifyIdArray || spotifyIdArray.length <= 0)
 			throw new Error("No Ids to add! Passed in ids: " + spotifyIdArray);
 		if (!spotifyPlaylistId)
 			throw new Error(
@@ -72,7 +72,7 @@ async function prependNewSongsToPlaylist(
 	token
 ) {
 	try {
-		if (!spotifyIdArray || spotifyIdArray.length > 0)
+		if (!spotifyIdArray || spotifyIdArray.length <= 0)
 			throw new Error("No Ids to add! Passed in ids: " + spotifyIdArray);
 		if (!spotifyPlaylistId)
 			throw new Error(
@@ -107,7 +107,7 @@ async function getSongsNotInPlaylist(spotifyIdArray, spotifyPlaylistId, token) {
 	const urlParams = "fields=tracks.items(track(name,id))";
 
 	try {
-		if (!spotifyIdArray || spotifyIdArray.length > 0)
+		if (!spotifyIdArray || spotifyIdArray.length <= 0)
 			throw new Error("No Ids to add! Passed in ids: " + spotifyIdArray);
 		if (!spotifyPlaylistId)
 			throw new Error(
