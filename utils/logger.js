@@ -1,4 +1,15 @@
 const { createLogger, format, transports } = require("winston");
+const fs = require("fs");
+const path = require("path");
+
+// Use persistent storage in production, local logs/ in development
+const LOG_DIR =
+	process.env.NODE_ENV === "production"
+		? "/app/data/logs"
+		: path.join(__dirname, "../logs");
+
+// Ensure log directory exists
+fs.mkdirSync(LOG_DIR, { recursive: true });
 
 const logger = createLogger({
 	level: "info",
@@ -12,19 +23,16 @@ const logger = createLogger({
 	),
 	defaultMeta: { service: "PLO-Integration" },
 	transports: [
-		//
-		// - Write to all logs with level `info` and below to `quick-start-combined.log`.
-		// - Write all logs error (and below) to `quick-start-error.log`.
-		//
-		new transports.File({ filename: "./logs/plo-error.log", level: "error" }),
-		new transports.File({ filename: "./logs/plo.log" }),
+		new transports.File({
+			filename: path.join(LOG_DIR, "plo-error.log"),
+			level: "error",
+		}),
+		new transports.File({
+			filename: path.join(LOG_DIR, "plo.log"),
+		}),
 	],
 });
 
-//
-// If we're not in production then **ALSO** log to the `console`
-// with the colorized simple format.
-//
 if (process.env.NODE_ENV !== "production") {
 	logger.add(
 		new transports.Console({

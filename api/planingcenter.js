@@ -1,4 +1,6 @@
 const axios = require("axios");
+const { logger } = require("../utils/logger");
+
 const token = Buffer.from(
 	`${process.env.APP_ID}:${process.env.SECRET}`,
 	"utf8"
@@ -7,11 +9,7 @@ const token = Buffer.from(
 async function getLatestPlanId() {
 	const { data } = await axios.get(
 		`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans?filter=future&order=sort_date&per_page=1`,
-		{
-			headers: {
-				Authorization: "Basic " + token,
-			},
-		}
+		{ headers: { Authorization: "Basic " + token } }
 	);
 	return data.data[0].id;
 }
@@ -19,34 +17,11 @@ async function getLatestPlanId() {
 async function getSongItemIdArray(planId) {
 	const { data } = await axios.get(
 		`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans/${planId}/items?include=song`,
-		{
-			headers: {
-				Authorization: "Basic " + token,
-			},
-		}
+		{ headers: { Authorization: "Basic " + token } }
 	);
 	return data.data
-		.filter((item) => {
-			return item.attributes.item_type === "song";
-		})
+		.filter((item) => item.attributes.item_type === "song")
 		.map((song) => song.id);
-}
-
-async function getAllSongItemIdArray() {
-	const songsArr = [];
-	do {
-		let query = links.next
-			? `https://api.planningcenteronline.com/services/v2/songs?per_page=100`
-			: links.next;
-		const { data, links } = await axios.get(query, {
-			headers: {
-				Authorization: "Basic " + token,
-			},
-		});
-		songsArr.push(...data);
-	} while (links.next);
-
-	return songsArr.map((song) => song.id);
 }
 
 async function getSpotifyId(attachmentId) {
@@ -54,15 +29,18 @@ async function getSpotifyId(attachmentId) {
 		const res = await axios.post(
 			`https://api.planningcenteronline.com/services/v2/attachments/${attachmentId}/open`,
 			{},
-			{
-				headers: {
-					Authorization: "Basic " + token,
-				},
-			}
+			{ headers: { Authorization: "Basic " + token } }
 		);
-		return res.data.data.attributes.attachment_url.split("track/")[1];
+		const rawUrl = res.data.data.attributes.attachment_url;
+		const url = new URL(rawUrl);
+		const parts = url.pathname.split("track/");
+		if (parts.length < 2) {
+			logger.warn("Could not parse Spotify track ID from URL: %s", rawUrl);
+			return null;
+		}
+		return parts[1];
 	} catch (error) {
-		console.log(error.message);
+		logger.error("getSpotifyId error for attachment %s: %s", attachmentId, error.message);
 		return null;
 	}
 }
@@ -72,19 +50,16 @@ async function getYoutubeId(attachmentId) {
 		const res = await axios.post(
 			`https://api.planningcenteronline.com/services/v2/attachments/${attachmentId}/open`,
 			{},
-			{
-				headers: {
-					Authorization: "Basic " + token,
-				},
-			}
+			{ headers: { Authorization: "Basic " + token } }
 		);
-
-		return res.data.data.attributes.attachment_url.split(
-			"https://www.youtube.com/watch?v="
-		)[1];
-		//return res.data.data.attributes.attachment_url.split("track/")[1];
+		const rawUrl = res.data.data.attributes.attachment_url;
+		const url = new URL(rawUrl);
+		if (url.hostname === "youtu.be") {
+			return url.pathname.slice(1);
+		}
+		return url.searchParams.get("v");
 	} catch (error) {
-		console.log(error.message);
+		logger.error("getYoutubeId error for attachment %s: %s", attachmentId, error.message);
 		return null;
 	}
 }
@@ -93,11 +68,7 @@ async function getAttachmentIds(planId, songItemId) {
 	try {
 		const res = await axios.get(
 			`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans/${planId}/items/${songItemId}/attachments`,
-			{
-				headers: {
-					Authorization: "Basic " + token,
-				},
-			}
+			{ headers: { Authorization: "Basic " + token } }
 		);
 		return res.data.data
 			.filter((attachment) => {
@@ -106,26 +77,24 @@ async function getAttachmentIds(planId, songItemId) {
 					attachment.attributes.pco_type === "AttachmentYoutube"
 				);
 			})
-			.map((attachment) => {
-				return { id: attachment.id, pco_type: attachment.attributes.pco_type };
-			});
+			.map((attachment) => ({
+				id: attachment.id,
+				pco_type: attachment.attributes.pco_type,
+			}));
 	} catch (error) {
-		console.log(error.message);
-		return null;
+		logger.error("getAttachmentIds error for item %s: %s", songItemId, error.message);
+		return [];
 	}
 }
+
 async function getAllSpotifyIds(attachmentIdArrays) {
-	const spotifyIds = Promise.all(
-		attachmentIdArrays.map(async (id) => getSpotifyId(id))
-	);
-	return spotifyIds;
+	const results = await Promise.all(attachmentIdArrays.map((id) => getSpotifyId(id)));
+	return results.filter(Boolean);
 }
 
 async function getAllYoutubeIds(attachmentIdArrays) {
-	const youtubeIds = Promise.all(
-		attachmentIdArrays.map(async (id) => getYoutubeId(id))
-	);
-	return youtubeIds;
+	const results = await Promise.all(attachmentIdArrays.map((id) => getYoutubeId(id)));
+	return results.filter(Boolean);
 }
 
 module.exports = {

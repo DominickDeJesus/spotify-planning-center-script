@@ -4,55 +4,51 @@ const {
 	getSongItemIdArray,
 	getAttachmentIds,
 	getAllSpotifyIds,
-	getYoutubeId,
 	getAllYoutubeIds,
 } = require("./planingcenter");
-const { addYouTubeVideos } = require("./youtubeapi");
+
 const { addSongsToPlaylist } = require("./spotify");
+const { logger } = require("../utils/logger");
 
 async function runAPICalls(spotifyToken, spotifyRefresh) {
 	try {
+		logger.info("runAPICalls started");
 		const planId = await getLatestPlanId();
+		logger.info("Plan ID: %s", planId);
+
 		const songItemIdArray = await getSongItemIdArray(planId);
+		logger.info("Song item IDs: %j", songItemIdArray);
+
 		let attachmentIdArray = await Promise.all(
-			songItemIdArray.map((songItemId) => {
-				return getAttachmentIds(planId, songItemId);
-			})
+			songItemIdArray.map((songItemId) => getAttachmentIds(planId, songItemId))
 		);
-		attachmentIdArray = [].concat.apply([], attachmentIdArray);
+		attachmentIdArray = [].concat(...attachmentIdArray);
 
 		const youtubeAttachIdsArr = attachmentIdArray
-			.filter((attachment) => {
-				return attachment.pco_type === "AttachmentYoutube";
-			})
-			.map((attachment) => {
-				return attachment.id;
-			});
+			.filter((a) => a.pco_type === "AttachmentYoutube")
+			.map((a) => a.id);
 
 		const spotifyAttachIdsArr = attachmentIdArray
-			.filter((attachment) => {
-				return attachment.pco_type === "AttachmentSpotify";
-			})
-			.map((attachment) => {
-				return attachment.id;
-			});
+			.filter((a) => a.pco_type === "AttachmentSpotify")
+			.map((a) => a.id);
 
-		//await getYoutubeId(youtubeAttachIdsArr[0]);
+		logger.info("Spotify attachment IDs: %j", spotifyAttachIdsArr);
+		logger.info("YouTube attachment IDs: %j", youtubeAttachIdsArr);
+
 		const spotifyIds = await getAllSpotifyIds(spotifyAttachIdsArr);
-		const youtubeIds = await getAllYoutubeIds(youtubeAttachIdsArr);
+		logger.info("Resolved Spotify track IDs: %j", spotifyIds);
 
-		console.log(youtubeIds);
-		console.log("adding youtube videos")
-		//await addYouTubeVideos(youtubeIds);
+		if (spotifyIds.length === 0) {
+			logger.warn("No Spotify tracks found for this plan. Aborting.");
+			return;
+		}
 
-		const res = await addSongsToPlaylist(
-			spotifyIds,
-			spotifyToken,
-			spotifyRefresh
-		);
+		await addSongsToPlaylist(spotifyIds, spotifyToken, spotifyRefresh);
+		logger.info("runAPICalls complete");
 	} catch (err) {
-		console.log(err.message);
+		logger.error("runAPICalls error: %s", err.message);
+		throw err;
 	}
 }
-//addYouTubeVideos(["mC-zw0zCCtg"])
+
 module.exports = { runAPICalls };

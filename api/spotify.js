@@ -1,11 +1,11 @@
 require("dotenv").config();
 const axios = require("axios");
+const { logger } = require("../utils/logger");
 
 async function getNewToken(refreshToken) {
 	const params = new URLSearchParams();
 	params.append("grant_type", "refresh_token");
 	params.append("refresh_token", refreshToken);
-
 	const response = await axios.post(
 		"https://accounts.spotify.com/api/token",
 		params,
@@ -25,20 +25,28 @@ async function getNewToken(refreshToken) {
 }
 
 async function addSongsToPlaylist(spotifyIdArray, token, refreshToken) {
-	console.log("Songs to add: ", spotifyIdArray);
-	const urlParams =
-		"uris=" + spotifyIdArray.map((id) => `spotify:track:${id},`).join("");
+	const validIds = spotifyIdArray.filter(Boolean);
+	logger.info("Songs to add: %j", validIds);
+
+	if (validIds.length === 0) {
+		logger.warn("No valid Spotify IDs found, skipping playlist update.");
+		return;
+	}
+
+	// Fixed: no trailing comma on each URI before joining
+	const uris = validIds.map((id) => `spotify:track:${id}`).join(",");
 
 	try {
 		const res = await axios.put(
-			`https://api.spotify.com/v1/playlists/${process.env.PLAYLIST_ID}/tracks?${urlParams}`,
+			`https://api.spotify.com/v1/playlists/${process.env.PLAYLIST_ID}/tracks?uris=${uris}`,
 			{},
 			{ headers: { Authorization: "Bearer " + token } }
 		);
-		console.log("Songs added!");
+		logger.info("Songs added to Spotify playlist successfully.");
 		return res;
 	} catch (error) {
-		console.log(error.message);
+		logger.error("addSongsToPlaylist error: %s", error.message);
+		throw error;
 	}
 }
 
