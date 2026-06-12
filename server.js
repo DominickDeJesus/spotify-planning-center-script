@@ -90,13 +90,13 @@ app.get("/login", function (req, res) {
 	const scope = "playlist-modify-private playlist-modify-public";
 	res.redirect(
 		"https://accounts.spotify.com/authorize?" +
-			querystring.stringify({
-				response_type: "code",
-				client_id: client_id,
-				scope: scope,
-				redirect_uri: redirect_uri,
-				state: state,
-			})
+		querystring.stringify({
+			response_type: "code",
+			client_id: client_id,
+			scope: scope,
+			redirect_uri: redirect_uri,
+			state: state,
+		})
 	);
 });
 
@@ -140,10 +140,10 @@ app.get("/callback", async function (req, res) {
 
 		res.redirect(
 			"/#" +
-				querystring.stringify({
-					access_token: spotifyToken,
-					refresh_token: spotifyRefreshToken,
-				})
+			querystring.stringify({
+				access_token: spotifyToken,
+				refresh_token: spotifyRefreshToken,
+			})
 		);
 	} catch (error) {
 		logger.error("Callback error: " + error.message);
@@ -203,9 +203,25 @@ app.get("/status", function (req, res) {
 		message: authenticated
 			? "Ready — webhooks will work."
 			: tokensOnDisk
-			? "Tokens on disk but not loaded yet — try restarting the server."
-			: "Not authenticated. Please visit /login to set up Spotify access.",
+				? "Tokens on disk but not loaded yet — try restarting the server."
+				: "Not authenticated. Please visit /login to set up Spotify access.",
 	});
+});
+
+app.get("/sync", async function (req, res) {
+	try {
+		if (!spotifyToken || !spotifyRefreshToken) {
+			return res.status(503).send("Not authenticated. Please visit /login first.");
+		}
+		spotifyToken = await getNewToken(spotifyRefreshToken);
+		saveTokens(spotifyToken, spotifyRefreshToken);
+		await runAPICalls(spotifyToken, spotifyRefreshToken);
+		res.send({ response: "Playlist synced successfully!" });
+		logger.info("Manual sync triggered via /sync endpoint.");
+	} catch (error) {
+		res.status(500).send("Sync failed: " + error.message);
+		logger.error("Manual sync error: %s", error.message);
+	}
 });
 
 app.listen(PORT, () => logger.info(`Server listening on ${PORT}`));

@@ -46,6 +46,7 @@ async function addSongsToPlaylist(spotifyIdArray, token, refreshToken) {
 		return res;
 	} catch (error) {
 		logger.error("addSongsToPlaylist error: %s", error.message);
+		logger.error("Spotify error response: %j", error.response?.data);
 		throw error;
 	}
 }
