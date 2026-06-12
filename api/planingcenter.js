@@ -21,7 +21,10 @@ async function getSongItemIdArray(planId) {
 	);
 	return data.data
 		.filter((item) => item.attributes.item_type === "song")
-		.map((song) => song.id);
+		.map((song) => {
+			logger.info("Song item data: %j", song);
+			return song.id;
+		});
 }
 
 async function getSpotifyId(attachmentId) {
