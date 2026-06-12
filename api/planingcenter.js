@@ -16,15 +16,10 @@ async function getLatestPlanId() {
 
 async function getSongItemIdArray(planId) {
 	const { data } = await axios.get(
-		`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans/${planId}/items?include=song`,
+		`https://api.planningcenteronline.com/services/v2/service_types/${process.env.SERVICE_TYPE_ID}/plans/${planId}/items?filter=song_items&per_page=50`,
 		{ headers: { Authorization: "Basic " + token } }
 	);
-	return data.data
-		.filter((item) => item.attributes.item_type === "song")
-		.map((song) => {
-			logger.info("Song item data: %j", song);
-			return song.id;
-		});
+	return data.data.map((song) => song.id);
 }
 
 async function getSpotifyId(attachmentId) {
