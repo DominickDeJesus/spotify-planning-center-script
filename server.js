@@ -18,12 +18,37 @@ const client_secret = process.env.SPOTIFY_SECRET;
 const redirect_uri = process.env.REDIRECT_URI;
 const PORT = process.env.PORT || 8888;
 const stateKey = "spotify_auth_state";
+let spotifyToken, spotifyRefreshToken;
+let cronJob = null;
 
 // Token persistence — stored in /app/data/tokens.json (Dokku persistent mount)
 const TOKEN_PATH = path.join("/app/data", "tokens.json");
 
-let spotifyToken, spotifyRefreshToken;
-let cronJob = null; // track cron so we don't duplicate it
+// Basic auth — protects all routes except webhooks
+function basicAuth(req, res, next) {
+	if (req.path === '/plohooks' || req.path === '/slackhooks') {
+		return next();
+	}
+	const authHeader = req.headers['authorization'];
+	if (!authHeader || !authHeader.startsWith('Basic ')) {
+		res.set('WWW-Authenticate', 'Basic realm="PLO Spotify"');
+		return res.status(401).send('Authentication required.');
+	}
+	const credentials = Buffer.from(authHeader.slice(6), 'base64').toString('utf8');
+	const [user, pass] = credentials.split(':');
+	if (user !== process.env.ADMIN_USER || pass !== process.env.ADMIN_PASS) {
+		res.set('WWW-Authenticate', 'Basic realm="PLO Spotify"');
+		return res.status(401).send('Invalid credentials.');
+	}
+	next();
+}
+
+app.use(basicAuth);
+app.use(morgan("dev"));
+app
+	.use(express.static(__dirname + "/public"))
+	.use(cors())
+	.use(cookieParser());
 
 function saveTokens(token, refreshToken) {
 	try {
@@ -54,12 +79,6 @@ function loadTokens() {
 const { runAPICalls } = require("./api");
 const { getNewToken } = require("./api/spotify");
 
-app.use(morgan("dev"));
-app
-	.use(express.static(__dirname + "/public"))
-	.use(cors())
-	.use(cookieParser());
-
 // On startup, load tokens from disk and schedule cron if available
 const hasTokens = loadTokens();
 if (hasTokens && spotifyRefreshToken) {
@@ -68,7 +87,6 @@ if (hasTokens && spotifyRefreshToken) {
 }
 
 function scheduleCron() {
-	// Cancel any existing job before scheduling a new one
 	if (cronJob) {
 		cronJob.cancel();
 	}
@@ -144,7 +162,7 @@ app.get("/callback", async function (req, res) {
 		runAPICalls(spotifyToken, spotifyRefreshToken).catch((err) => {
 			logger.error("Initial sync after login failed: %s", err.message);
 		});
-		
+
 	} catch (error) {
 		logger.error("Callback error: " + error.message);
 		res.redirect("/#" + querystring.stringify({ error: "invalid_token" }));
@@ -170,10 +188,8 @@ app.post("/plohooks", async function (req, res) {
 			logger.error("Webhook called but no Spotify tokens available.");
 			return res.status(503).send("No Spotify tokens. Please log in at /login first.");
 		}
-		// Refresh token before running to ensure it's not expired
 		spotifyToken = await getNewToken(spotifyRefreshToken);
 		saveTokens(spotifyToken, spotifyRefreshToken);
-
 		await runAPICalls(spotifyToken, spotifyRefreshToken);
 		res.send({ response: "Webhook received!" });
 		logger.log("info", "PLO webhook processed successfully. Body: %j", req.body);
