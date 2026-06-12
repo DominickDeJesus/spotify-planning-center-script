@@ -219,6 +219,13 @@ app.get("/sync", async function (req, res) {
 		res.send({ response: "Playlist synced successfully!" });
 		logger.info("Manual sync triggered via /sync endpoint.");
 	} catch (error) {
+		if (error.response?.status === 403) {
+			const spotifyMessage = error.response?.data?.error?.message || "";
+			if (spotifyMessage.toLowerCase().includes("premium")) {
+				return res.status(403).send("Spotify Premium required. Please log in with a Premium account at /login.");
+			}
+			return res.status(403).send("Spotify returned 403 — playlist may not be owned by the authenticated account.");
+		}
 		res.status(500).send("Sync failed: " + error.message);
 		logger.error("Manual sync error: %s", error.message);
 	}
