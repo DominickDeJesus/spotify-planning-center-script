@@ -32,6 +32,7 @@ async function getSpotifyId(attachmentId) {
 			{ headers: { Authorization: "Basic " + token } }
 		);
 		const rawUrl = res.data.data.attributes.attachment_url;
+		logger.info("Raw Spotify URL for attachment %s: %s", attachmentId, rawUrl);
 		const url = new URL(rawUrl);
 		const parts = url.pathname.split("track/");
 		if (parts.length < 2) {
