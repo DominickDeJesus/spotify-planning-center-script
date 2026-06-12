@@ -209,13 +209,27 @@ app.post("/slackhooks", async function (req, res) {
 	}
 });
 
-app.get("/status", function (req, res) {
+app.get("/status", async function (req, res) {
 	const tokensOnDisk = fs.existsSync(TOKEN_PATH);
 	const authenticated = !!(spotifyToken && spotifyRefreshToken);
+	let displayName = null;
+
+	if (authenticated) {
+		try {
+			const profile = await axios.get("https://api.spotify.com/v1/me", {
+				headers: { Authorization: "Bearer " + spotifyToken }
+			});
+			displayName = profile.data.display_name || profile.data.id;
+		} catch (err) {
+			logger.error("Failed to fetch Spotify profile: " + err.message);
+		}
+	}
+
 	res.send({
 		authenticated,
 		tokensOnDisk,
 		cronScheduled: !!cronJob,
+		displayName,
 		message: authenticated
 			? "Ready — webhooks will work."
 			: tokensOnDisk
