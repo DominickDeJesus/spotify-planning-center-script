@@ -133,18 +133,18 @@ app.get("/callback", async function (req, res) {
 		// Persist tokens so they survive restarts
 		saveTokens(spotifyToken, spotifyRefreshToken);
 
-		await runAPICalls(spotifyToken, spotifyRefreshToken);
+		// Redirect immediately — don't let sync failure affect login
+		res.redirect("/#" + querystring.stringify({
+			access_token: spotifyToken,
+			refresh_token: spotifyRefreshToken,
+		}));
 
-		// Schedule daily cron (safe to call multiple times — cancels old job first)
+		// Run sync in background after successful auth
 		scheduleCron();
-
-		res.redirect(
-			"/#" +
-			querystring.stringify({
-				access_token: spotifyToken,
-				refresh_token: spotifyRefreshToken,
-			})
-		);
+		runAPICalls(spotifyToken, spotifyRefreshToken).catch((err) => {
+			logger.error("Initial sync after login failed: %s", err.message);
+		});
+		
 	} catch (error) {
 		logger.error("Callback error: " + error.message);
 		res.redirect("/#" + querystring.stringify({ error: "invalid_token" }));
