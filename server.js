@@ -9,6 +9,7 @@ const cron = require("node-schedule");
 const { default: axios } = require("axios");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 //loggers
 const morgan = require("morgan");
 const { logger } = require("./utils/logger");
@@ -180,24 +181,52 @@ app.get("/refresh_token", async function (req, res) {
 	}
 });
 
-app.use(express.json());
-
-app.post("/plohooks", async function (req, res) {
+// IMPORTANT: /plohooks uses express.raw() to get the exact bytes Planning Center
+// signed, since HMAC verification requires the raw unparsed body.
+// This must be declared BEFORE the global express.json() middleware below.
+app.post("/plohooks", express.raw({ type: "*/*" }), async function (req, res) {
 	try {
+		const signature = req.headers["x-pco-webhooks-authenticity"];
+		if (!signature) {
+			logger.error("Webhook missing signature header — rejecting.");
+			return res.status(401).send("Missing signature.");
+		}
+
+		const computedSignature = crypto
+			.createHmac("sha256", process.env.WEBHOOK_SECRET)
+			.update(req.body)
+			.digest("hex");
+
+		const sigBuffer = Buffer.from(signature, "utf8");
+		const computedBuffer = Buffer.from(computedSignature, "utf8");
+
+		const isValid =
+			sigBuffer.length === computedBuffer.length &&
+			crypto.timingSafeEqual(sigBuffer, computedBuffer);
+
+		if (!isValid) {
+			logger.error("Webhook signature mismatch — rejecting.");
+			return res.status(401).send("Invalid signature.");
+		}
+
 		if (!spotifyToken || !spotifyRefreshToken) {
 			logger.error("Webhook called but no Spotify tokens available.");
 			return res.status(503).send("No Spotify tokens. Please log in at /login first.");
 		}
+
 		spotifyToken = await getNewToken(spotifyRefreshToken);
 		saveTokens(spotifyToken, spotifyRefreshToken);
 		await runAPICalls(spotifyToken, spotifyRefreshToken);
+
 		res.send({ response: "Webhook received!" });
-		logger.log("info", "PLO webhook processed successfully. Body: %j", req.body);
+		logger.info("PLO webhook processed successfully.");
 	} catch (error) {
 		res.status(500).send("Webhook encountered an error.");
-		logger.log("error", error.message);
+		logger.error("Webhook error: " + error.message);
 	}
 });
+
+app.use(express.json());
 
 app.post("/slackhooks", async function (req, res) {
 	try {
@@ -217,7 +246,7 @@ app.get("/status", async function (req, res) {
 	if (authenticated) {
 		try {
 			const profile = await axios.get("https://api.spotify.com/v1/me", {
-				headers: { Authorization: "Bearer " + spotifyToken }
+				headers: { Authorization: "Bearer " + spotifyToken },
 			});
 			displayName = profile.data.display_name || profile.data.id;
 		} catch (err) {
