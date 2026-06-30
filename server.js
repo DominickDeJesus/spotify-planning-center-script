@@ -184,27 +184,36 @@ app.get("/refresh_token", async function (req, res) {
 // IMPORTANT: /plohooks uses express.raw() to get the exact bytes Planning Center
 // signed, since HMAC verification requires the raw unparsed body.
 // This must be declared BEFORE the global express.json() middleware below.
+// Planning Center issues a separate signing secret per event type subscription.
+// We try each known secret and accept the webhook if any one of them matches.
+const WEBHOOK_SECRETS = [
+	process.env.WEBHOOK_SECRET_CREATED,
+	process.env.WEBHOOK_SECRET_DESTROYED,
+	process.env.WEBHOOK_SECRET_UPDATED,
+].filter(Boolean);
+
+function verifyWebhookSignature(rawBody, signature) {
+	if (!signature) return false;
+	const sigBuffer = Buffer.from(signature, "utf8");
+
+	return WEBHOOK_SECRETS.some((secret) => {
+		const computedSignature = crypto
+			.createHmac("sha256", secret)
+			.update(rawBody)
+			.digest("hex");
+		const computedBuffer = Buffer.from(computedSignature, "utf8");
+		return (
+			sigBuffer.length === computedBuffer.length &&
+			crypto.timingSafeEqual(sigBuffer, computedBuffer)
+		);
+	});
+}
+
 app.post("/plohooks", express.raw({ type: "*/*" }), async function (req, res) {
 	try {
 		const signature = req.headers["x-pco-webhooks-authenticity"];
-		if (!signature) {
-			logger.error("Webhook missing signature header — rejecting.");
-			return res.status(401).send("Missing signature.");
-		}
 
-		const computedSignature = crypto
-			.createHmac("sha256", process.env.WEBHOOK_SECRET)
-			.update(req.body)
-			.digest("hex");
-
-		const sigBuffer = Buffer.from(signature, "utf8");
-		const computedBuffer = Buffer.from(computedSignature, "utf8");
-
-		const isValid =
-			sigBuffer.length === computedBuffer.length &&
-			crypto.timingSafeEqual(sigBuffer, computedBuffer);
-
-		if (!isValid) {
+		if (!verifyWebhookSignature(req.body, signature)) {
 			logger.error("Webhook signature mismatch — rejecting.");
 			return res.status(401).send("Invalid signature.");
 		}
